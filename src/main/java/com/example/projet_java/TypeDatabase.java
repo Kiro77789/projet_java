@@ -22,20 +22,20 @@ public class TypeDatabase {
                 Arrays.asList("Feu", "Glace", "Poison", "Vol", "Insecte"),
                 Arrays.asList("Eau", "Électrik", "Sol")));
 
-        types.put("Électrik", new Types("Électrik",
+        types.put("électrique", new Types("électrique",
                 Arrays.asList("Eau", "Vol"),
                 Arrays.asList("Sol"),
-                Arrays.asList("Électrik", "Acier", "Vol")));
+                Arrays.asList("électrique", "Acier", "Vol")));
 
         types.put("Sol", new Types("Sol",
-                Arrays.asList("Électrik", "Feu", "Roche", "Poison", "Acier"),
+                Arrays.asList("électrique", "Feu", "Roche", "Poison", "Acier"),
                 Arrays.asList("Eau", "Glace", "Plante"),
-                Arrays.asList("Poison", "Roche")));
+                Arrays.asList("Poison", "Roche", "Vol")));
 
         types.put("Vol", new Types("Vol",
                 Arrays.asList("Plante", "Combat", "Insecte"),
-                Arrays.asList("Électrik", "Glace", "Roche"),
-                Arrays.asList("Sol", "Combat", "Insecte")));
+                Arrays.asList("électrique", "Glace", "Roche"),
+                Arrays.asList("Combat", "Insecte")));
     }
 
     public static Types getType(String name) {

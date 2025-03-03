@@ -14,11 +14,12 @@ public class HelloApplication extends Application {
         Object myObject = new Object();
 
         // Création d'un Pokémon avec l'objet "Poings"
-        Pokemon p = new Pokemon("Magicarpe", 250, 52, 20, 75, 66, 100, "Eau", myObject.Poings);
-        Pokemon p2 = new Pokemon("Salamèche", 500, 70, 80, 175, 166, 150, "Feu", myObject.Poings);
+        Pokemon p1 = new Pokemon("Magicarpe", 250, 52, 20, 75, 66, 100, "Vol", myObject.Poings);
+        Pokemon p2 = new Pokemon("Salamèche", 500, 70, 80, 175, 166, 150, "Sol", myObject.Poings);
 
-        p.boostAtt(myObject);
-        System.out.println(p.Attack);
+        p1.boostAtt(myObject);
+        p2.boostAtt(myObject);
+        Combat.checkCombat(p1, p2);
 
         launch();
     }

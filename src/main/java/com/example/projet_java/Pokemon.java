@@ -24,6 +24,10 @@ public class Pokemon {
         this.object = object;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public void boostDef(Object objec) {
         if (objec != null && object.equals(objec.Pierre)) {
             Defense += 50;
@@ -56,7 +60,7 @@ public class Pokemon {
         } else if (this.type.isWeakAgainst(adversaire.type.getName())) {
             multiplicateur = 0.5; // Pas très efficace
         } else if (adversaire.type.isResistantTo(this.type.getName())) {
-            multiplicateur = 0.5; // Résistance
+            multiplicateur = 0; // Résistance
         }
 
         return (int) (((this.Attack * 2) / adversaire.Defense) * multiplicateur);
