@@ -3,12 +3,12 @@ package com.example.projet_java;
 public class Pokemon {
 
     private String name;
-    public int HP;
-    protected int Attack;
-    protected int Defense;
-    protected int AttackSpe;
-    protected int DefenseSpe;
-    public int vitesse;
+    private int HP;
+    private int Attack;
+    private int Defense;
+    private int AttackSpe;
+    private int DefenseSpe;
+    private int vitesse;
     public Types type;
     public String object;
 
@@ -26,6 +26,30 @@ public class Pokemon {
 
     public String getName() {
         return name;
+    }
+
+    public int getHP() {
+        return HP;
+    }
+
+    public int getAttack() {
+        return Attack;
+    }
+
+    public int getDefense() {
+        return Defense;
+    }
+
+    public int getAttackSpe() {
+        return AttackSpe;
+    }
+
+    public int getDefenseSpe() {
+        return DefenseSpe;
+    }
+
+    public int getVitesse() {
+        return vitesse;
     }
 
     public void boostDef(Object objec) {
