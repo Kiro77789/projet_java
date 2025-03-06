@@ -11,6 +11,8 @@ public class Pokemon {
     private int vitesse;
     public Types type;
     public String object;
+    // Tableau de capacités (4 coups)
+    private String[] moves;
 
     public Pokemon(String name, int HP, int Attack, int Defense, int AttackSpe, int DefenseSpe, int vitesse, String type, String object) {
         this.name = name;
@@ -22,8 +24,11 @@ public class Pokemon {
         this.vitesse = vitesse;
         this.type = TypeDatabase.getType(type);
         this.object = object;
+        // Capacités par défaut
+        this.moves = new String[]{"Move1", "Move2", "Move3", "Move4"};
     }
 
+    // Getters pour les statistiques
     public String getName() {
         return name;
     }
@@ -52,6 +57,16 @@ public class Pokemon {
         return vitesse;
     }
 
+    // Getters et setters pour les capacités
+    public String[] getMoves() {
+        return moves;
+    }
+
+    public void setMoves(String[] moves) {
+        this.moves = moves;
+    }
+
+    // Méthodes de boost et autres
     public void boostDef(Object objec) {
         if (objec != null && object.equals(objec.Pierre)) {
             Defense += 50;
@@ -78,7 +93,6 @@ public class Pokemon {
 
     public int calculerDommages(Pokemon adversaire) {
         double multiplicateur = 1.0;
-
         if (this.type.isStrongAgainst(adversaire.type.getName())) {
             multiplicateur = 2.0; // Super efficace
         } else if (this.type.isWeakAgainst(adversaire.type.getName())) {
@@ -86,7 +100,6 @@ public class Pokemon {
         } else if (adversaire.type.isResistantTo(this.type.getName())) {
             multiplicateur = 0; // Résistance
         }
-
-        return (int) (((this.Attack * 2) / adversaire.Defense) * multiplicateur);
+        return (int) (((this.Attack * 2) / (double)adversaire.Defense) * multiplicateur);
     }
 }

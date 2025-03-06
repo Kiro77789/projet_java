@@ -1,113 +1,79 @@
 package com.example.projet_java;
 
 import javafx.application.Application;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
-import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HelloApplication extends Application {
-    // Déclarer p1 comme variable d'instance accessible dans toute la classe
-    private Pokemon p1;
-    private Pokemon p2;
 
-    public static void main(String[] args) {
-        launch(args);
-    }
+    public Stage primaryStage;
+    public Scene menuScene;
+    public Scene teamSelectionScene;
+    public Scene combatScene;
+    public Scene creditsScene;
+
+    // Données de jeu
+    public Pokemon[] availablePokemons;
+    public List<Pokemon> teamPlayer1 = new ArrayList<>();
+    public List<Pokemon> teamPlayer2 = new ArrayList<>();
+    public int currentPlayer = 1; // 1 ou 2
 
     @Override
-    public void init() throws Exception {
-        // Initialiser p1 ici
-        Object myObject = new Object();
-        p1 = new Pokemon("Magicacarpe", 250, 52, 20, 75, 66, 100, "Vol", myObject.Poings);
-        p2 = new Pokemon("Dracaufeu", 250, 52, 20, 75, 66, 100, "Vol", myObject.Poings);
+    public void init() {
+        // Initialisation de quelques Pokémon disponibles
+        availablePokemons = new Pokemon[] {
+                new Pokemon("Pikachu", 200, 55, 40, 50, 50, 90, "électrique", "Poings"),
+                new Pokemon("Carapuce", 250, 48, 65, 50, 64, 43, "Eau", "Plume"),
+                new Pokemon("Bulbizarre", 300, 49, 49, 65, 65, 45, "Plante", "CeintureForce"),
+                new Pokemon("Salamèche", 240, 52, 43, 60, 50, 65, "Feu", "Poings"),
+                new Pokemon("Dracaufeu", 360, 84, 78, 109, 85, 100, "Feu", "Poings"),
+                new Pokemon("Ronflex", 500, 110, 65, 65, 110, 30, "Normal", "Reste"),
+                new Pokemon("Mewtwo", 400, 110, 90, 154, 90, 130, "Psy", "Plume")
+                // Ajoutez d'autres Pokémon si besoin
+        };
     }
 
     @Override
     public void start(Stage stage) {
-        // --- Scène 1 ---
-        Image image = new Image("background.jpg");
-        ImageView imageView = new ImageView(image);
-        imageView.setFitWidth(800);
-        imageView.setFitHeight(600);
-        imageView.setPreserveRatio(false);
+        primaryStage = stage;
+        // Création des différentes scènes en passant une référence à this
+        menuScene = MenuSceneUI.getScene(this);
+        creditsScene = CreditsSceneUI.getScene(this);
+        teamSelectionScene = TeamSelectionUI.getScene(this);
+        combatScene = CombatUI.getScene(this);
 
-        Button jouerButton = new Button("Jouer !");
-        VBox vboxScene1 = new VBox(jouerButton);
-        vboxScene1.setAlignment(Pos.CENTER);
-        vboxScene1.setSpacing(20);
+        primaryStage.setTitle("Pokémon Showdown Simulator");
+        primaryStage.setScene(menuScene);
+        primaryStage.show();
+    }
 
-        StackPane rootScene1 = new StackPane(imageView, vboxScene1);
-        Scene scene1 = new Scene(rootScene1, 800, 600);
+    // Méthodes de transition entre les scènes
+    public void showMenuScene() {
+        primaryStage.setScene(menuScene);
+    }
 
-        // --- Scène 2 avec BorderPane ---
-        BorderPane root2 = new BorderPane();
-        Scene scene2 = new Scene(root2, 800, 600);
+    public void showCreditsScene() {
+        primaryStage.setScene(creditsScene);
+    }
 
-        // Création des éléments de la scène 2 en utilisant les getters du Pokémon
-        Label labelHP = new Label("HP : " + p1.getHP());
-        Label labelAttack = new Label("Att : " + p1.getAttack());
-        Label labelDefense = new Label("Def : " + p1.getDefense());
-        Label labelAttackSpe = new Label("Att Spe : " + p1.getAttackSpe());
-        Label labelDefenseSpe = new Label("Def Spe : " + p1.getDefenseSpe());
-        Label labelVitesse = new Label("Vit : " + p1.getVitesse());
-        Label labelType = new Label("Type : " + p1.type.getName());
-        Button retourButton = new Button("Retour à la Scene 1");
-        // Le bouton affiche automatiquement le nom du Pokémon via le getter
-        Button pokemonButton = new Button(p1.getName());
-        Button pokemonButton2 = new Button(p2.getName());
+    public void showTeamSelectionScene() {
+        // Réinitialise les équipes et le joueur courant
+        teamPlayer1.clear();
+        teamPlayer2.clear();
+        currentPlayer = 1;
+        TeamSelectionUI.updateTeamSelectionLabel(this);
+        TeamSelectionUI.clearTeamGrid();
+        primaryStage.setScene(teamSelectionScene);
+    }
 
+    public void showCombatScene() {
+        CombatUI.setupBattleScene(this);
+        primaryStage.setScene(combatScene);
+    }
 
-        //Section gauche selection pokemon
-
-            // Hbox pour les labels
-            HBox labelsHBox = new HBox(labelHP, labelAttack, labelDefense, labelAttackSpe, labelDefenseSpe, labelVitesse, labelType);
-            labelsHBox.setSpacing(10);
-            root2.setCenter(labelsHBox);
-
-            // Bouton "pokemon"
-            VBox leftBox = new VBox(pokemonButton, pokemonButton2);
-            leftBox.setSpacing(10);
-
-            // Élements de gestion des boutons d'affichage de stats
-            HBox p1TotBox = new HBox(leftBox , labelsHBox);
-            p1TotBox.setSpacing(20);
-            p1TotBox.setPadding(new Insets(50,0,0,0));
-            p1TotBox.setAlignment(Pos.CENTER);
-            root2.setLeft(p1TotBox);
-
-            // Bouton "Retour" en bas à gauche
-            HBox bottomBox = new HBox(retourButton);
-            bottomBox.setAlignment(Pos.CENTER_LEFT);
-            root2.setBottom(bottomBox);
-
-        //Affichage des éléments non interactif
-        Label infoActions = new Label("Séléctionner des pokémons pour votre équipe :");
-        infoActions.setFont(Font.font("Arial" , 28));
-
-        //Placement des éléments non-interactifs
-        root2.setTop(infoActions);
-        infoActions.setAlignment(Pos.CENTER);
-
-        // --- Actions des boutons ---
-        jouerButton.setOnAction(e -> stage.setScene(scene2));
-        retourButton.setOnAction(e -> stage.setScene(scene1));
-        pokemonButton.setOnAction(e -> labelsHBox.setVisible(!labelsHBox.isVisible()));
-
-
-        // Affichage initial de la scène 1
-        stage.setTitle("Pokémon tah les fous");
-        stage.setScene(scene1);
-        stage.show();
-
-        /*
-            Nique agathe , je t'aime pas , t'es chiante , tu pètes les couilles
-         */
+    public static void main(String[] args) {
+        launch(args);
     }
 }
