@@ -1,13 +1,12 @@
 package com.example.projet_java;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class Types {
     private String name;
-    private List<String> strongAgainst;  // Types contre lesquels ce type est fort
-    private List<String> weakAgainst;    // Types contre lesquels ce type est faible
-    private List<String> resistantTo;    // Types contre lesquels ce type résiste
+    private List<String> strongAgainst;
+    private List<String> weakAgainst;
+    private List<String> resistantTo;
 
     public Types(String name, List<String> strongAgainst, List<String> weakAgainst, List<String> resistantTo) {
         this.name = name;
@@ -34,6 +33,6 @@ public class Types {
 
     @Override
     public String toString() {
-        return "Type: " + name;
+        return name;
     }
 }

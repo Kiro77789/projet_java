@@ -5,204 +5,309 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+
+import java.util.Optional;
+import java.util.Random;
 
 public class CombatUI {
 
-    private static Label roundLabel;
-    private static HBox activePokemonPane;
-    private static HBox movesPanel;
-    private static HBox switchPanel;
-    private static int roundCount = 1;
+    // On stocke deux rectangles pour afficher le statut
+    private static Rectangle p1StatusRect = new Rectangle(10, 10, Color.TRANSPARENT);
+    private static Rectangle p2StatusRect = new Rectangle(10, 10, Color.TRANSPARENT);
 
-    public static Scene getScene(HelloApplication app) {
+    public static Scene getScene(PokemonBattleSimulator app) {
         BorderPane root = new BorderPane();
+        root.setPadding(new Insets(10));
 
-        // Top : Zone avec le numéro du round et le cadre des Pokémon actifs
-        VBox topBox = new VBox(10);
-        topBox.setPadding(new Insets(10));
-        roundLabel = new Label("Round: " + roundCount);
-        roundLabel.setStyle("-fx-font-size: 20px;");
-        activePokemonPane = createActivePokemonPane(app);
-        topBox.getChildren().addAll(roundLabel, activePokemonPane);
-        topBox.setAlignment(Pos.CENTER);
-        root.setTop(topBox);
+        // Panneau de gauche : cadre composite avec infos joueur et ordinateur encadrant un "VS"
+        HBox leftPanel = new HBox(10);
+        leftPanel.setAlignment(Pos.CENTER);
 
-        // Centre : Panneau d'actions (zone d'attaques et changement de Pokémon)
-        VBox centerBox = new VBox(20);
-        centerBox.setPadding(new Insets(10));
-        centerBox.setAlignment(Pos.CENTER);
-        movesPanel = createMovesPanel(app);
-        switchPanel = createSwitchPanel(app);
-        centerBox.getChildren().addAll(movesPanel, switchPanel);
-        root.setCenter(centerBox);
+        // Panneau Joueur
+        VBox p1Info = new VBox(5);
+        p1Info.setAlignment(Pos.CENTER);
+        Label p1NameLabel = new Label();
+        p1NameLabel.setFont(Font.font(14));
 
-        // Right : Historique du combat
-        VBox historyBox = new VBox(10);
-        historyBox.setPadding(new Insets(10));
-        Label historyTitle = new Label("Historique");
+        // On place le petit carré + nom dans un HBox
+        HBox p1NameBox = new HBox(5, p1StatusRect, p1NameLabel);
+
+        ProgressBar p1HPBar = new ProgressBar(1.0);
+        p1HPBar.setPrefWidth(100);
+        Label p1HPLabel = new Label();
+        p1Info.getChildren().addAll(p1NameBox, p1HPBar, p1HPLabel);
+
+        // Cadre central "VS"
+        StackPane lifePane = new StackPane();
+        lifePane.setPrefSize(100, 100);
+        lifePane.setStyle("-fx-border-color: gray; -fx-border-width: 2;");
+        Label vsLabel = new Label("VS");
+        vsLabel.setFont(Font.font(20));
+        lifePane.getChildren().add(vsLabel);
+
+        // Panneau Ordinateur
+        VBox p2Info = new VBox(5);
+        p2Info.setAlignment(Pos.CENTER);
+        Label p2NameLabel = new Label();
+        p2NameLabel.setFont(Font.font(14));
+
+        HBox p2NameBox = new HBox(5, p2StatusRect, p2NameLabel);
+
+        ProgressBar p2HPBar = new ProgressBar(1.0);
+        p2HPBar.setPrefWidth(100);
+        Label p2HPLabel = new Label();
+        p2Info.getChildren().addAll(p2NameBox, p2HPBar, p2HPLabel);
+
+        leftPanel.getChildren().addAll(p1Info, lifePane, p2Info);
+        root.setLeft(leftPanel);
+
+        // Zone centrale : 4 boutons d'attaque et boutons supplémentaires
+        VBox centerPanel = new VBox(10);
+        centerPanel.setAlignment(Pos.CENTER);
+        HBox moveButtonsPane = new HBox(10);
+        moveButtonsPane.setAlignment(Pos.CENTER);
+
+        Button moveButton1 = new Button();
+        Button moveButton2 = new Button();
+        Button moveButton3 = new Button();
+        Button moveButton4 = new Button();
+
+        moveButton1.setPrefWidth(150);
+        moveButton2.setPrefWidth(150);
+        moveButton3.setPrefWidth(150);
+        moveButton4.setPrefWidth(150);
+
+        moveButtonsPane.getChildren().addAll(moveButton1, moveButton2, moveButton3, moveButton4);
+
+        HBox extraButtonsPane = new HBox(20);
+        extraButtonsPane.setAlignment(Pos.CENTER);
+        Button switchButton = new Button("Changer de Pokémon");
+        Button megaButton = new Button("Mega Évolution");
+        extraButtonsPane.getChildren().addAll(switchButton, megaButton);
+
+        centerPanel.getChildren().addAll(moveButtonsPane, extraButtonsPane);
+        root.setCenter(centerPanel);
+
+        // Zone inférieure : historique de combat (style sombre et monospace)
         TextArea battleLog = new TextArea();
         battleLog.setEditable(false);
-        battleLog.setPrefWidth(250);
-        battleLog.setPrefHeight(400);
-        historyBox.getChildren().addAll(historyTitle, battleLog);
-        root.setRight(historyBox);
+        battleLog.setWrapText(true);
+        battleLog.setPrefHeight(150);
+        battleLog.setStyle("-fx-control-inner-background: #333; -fx-text-fill: #fff; -fx-font-family: monospace;");
+        root.setBottom(battleLog);
 
-        // Bottom : Bouton pour retourner au menu
-        Button returnButton = new Button("Retour au menu");
-        returnButton.setOnAction(e -> app.showMenuScene());
-        HBox bottomBox = new HBox(returnButton);
-        bottomBox.setAlignment(Pos.CENTER);
-        bottomBox.setPadding(new Insets(10));
-        root.setBottom(bottomBox);
+        // Mise à jour des panneaux d'infos et des boutons d'attaque
+        updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel);
+        updateMoveButtons(app, moveButton1, moveButton2, moveButton3, moveButton4);
 
-        // Actions pour les capacités : chaque bouton ajoute son usage dans l'historique, même si c'est un move "placeholder"
-        for (javafx.scene.Node node : movesPanel.getChildren()) {
-            if (node instanceof Button) {
-                Button moveBtn = (Button) node;
-                moveBtn.setOnAction(e -> {
-                    battleLog.appendText("Round " + roundCount + ": " + moveBtn.getText() + " utilisé.\n");
-                    roundCount++;
-                    roundLabel.setText("Round: " + roundCount);
-                });
+        // Actions pour les 4 boutons d'attaque
+        moveButton1.setOnAction(e -> handleMoveButton(app, moveButton1, battleLog,
+                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel));
+        moveButton2.setOnAction(e -> handleMoveButton(app, moveButton2, battleLog,
+                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel));
+        moveButton3.setOnAction(e -> handleMoveButton(app, moveButton3, battleLog,
+                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel));
+        moveButton4.setOnAction(e -> handleMoveButton(app, moveButton4, battleLog,
+                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel));
+
+        // Changement de Pokémon : ce changement consomme le tour
+        switchButton.setOnAction(e -> {
+            java.util.List<Pokemon> team = app.teamPlayer1;
+            if (team.size() <= 1) {
+                battleLog.appendText("Aucun autre Pokémon disponible pour changer.\n");
+                return;
             }
-        }
+            Pokemon currentActive = team.get(0);
+            java.util.List<Pokemon> choices = new java.util.ArrayList<>(team.subList(1, team.size()));
+            ChoiceDialog<Pokemon> switchDialog = new ChoiceDialog<>(choices.get(0), choices);
+            switchDialog.setTitle("Changer de Pokémon");
+            switchDialog.setHeaderText("Sélectionnez le Pokémon à envoyer (le changement consomme le tour)");
+            switchDialog.setContentText("Choix :");
+            Optional<Pokemon> selected = switchDialog.showAndWait();
+            selected.ifPresent(p -> {
+                int index = team.indexOf(p);
+                team.set(index, currentActive);
+                team.set(0, p);
+                battleLog.appendText("Changement de Pokémon: " + p.getName() + " est maintenant actif. Le tour est consommé.\n");
+                updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel);
+                updateMoveButtons(app, moveButton1, moveButton2, moveButton3, moveButton4);
+            });
+        });
 
-        return new Scene(root, 800, 600);
+        // Mega Évolution
+        megaButton.setOnAction(e -> {
+            Pokemon active = app.teamPlayer1.isEmpty() ? null : app.teamPlayer1.get(0);
+            if (active != null && !active.isMegaEvolved()) {
+                active.megaEvolve();
+                battleLog.appendText(active.getName() + " a méga évolué!\n");
+                updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel);
+            }
+        });
+
+        return new Scene(root, 1000, 600);
     }
 
-    // Mise à jour de la scène de combat avant son affichage
-    public static void setupBattleScene(HelloApplication app) {
-        BorderPane root = (BorderPane) app.combatScene.getRoot();
-        VBox topBox = (VBox) root.getTop();
-        HBox updatedActivePane = createActivePokemonPane(app);
-        if (topBox.getChildren().size() >= 2) {
-            topBox.getChildren().set(1, updatedActivePane);
-        } else {
-            topBox.getChildren().add(updatedActivePane);
-        }
-        VBox centerBox = (VBox) root.getCenter();
-        centerBox.getChildren().clear();
-        centerBox.getChildren().addAll(createMovesPanel(app), createSwitchPanel(app));
-    }
-
-    // Crée le cadre affichant les deux Pokémon actifs avec des labels agrandis
-    private static HBox createActivePokemonPane(HelloApplication app) {
-        HBox pane = new HBox(40);
-        pane.setPadding(new Insets(10));
-        pane.setAlignment(Pos.CENTER);
-        Pokemon activeP1 = app.teamPlayer1.isEmpty() ? null : app.teamPlayer1.get(0);
-        Pokemon activeP2 = app.teamPlayer2.isEmpty() ? null : app.teamPlayer2.get(0);
-
-        VBox p1Box = new VBox(5);
-        p1Box.setAlignment(Pos.CENTER);
-        p1Box.setStyle("-fx-border-color: black; -fx-border-width: 2;");
-        if (activeP1 != null) {
-            Label name1 = new Label(activeP1.getName());
-            name1.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
-            Label hp1 = new Label("HP: " + activeP1.getHP());
-            hp1.setStyle("-fx-font-size: 20px;");
-            p1Box.getChildren().addAll(name1, hp1);
-        } else {
-            p1Box.getChildren().add(new Label("Aucun"));
-        }
-
-        VBox p2Box = new VBox(5);
-        p2Box.setAlignment(Pos.CENTER);
-        p2Box.setStyle("-fx-border-color: black; -fx-border-width: 2;");
-        if (activeP2 != null) {
-            Label name2 = new Label(activeP2.getName());
-            name2.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
-            Label hp2 = new Label("HP: " + activeP2.getHP());
-            hp2.setStyle("-fx-font-size: 20px;");
-            p2Box.getChildren().addAll(name2, hp2);
-        } else {
-            p2Box.getChildren().add(new Label("Aucun"));
-        }
-        pane.getChildren().addAll(p1Box, p2Box);
-        return pane;
-    }
-
-    // Crée le panneau des attaques avec 4 boutons (les capacités du Pokémon actif)
-    private static HBox createMovesPanel(HelloApplication app) {
-        HBox movesBox = new HBox(10);
-        movesBox.setAlignment(Pos.CENTER);
-        Pokemon active = app.teamPlayer1.isEmpty() ? null : app.teamPlayer1.get(0);
-        String[] moves;
-        if (active != null && active.getMoves() != null) {
-            moves = active.getMoves();
-        } else {
-            moves = new String[]{"Move1", "Move2", "Move3", "Move4"};
-        }
-        for (String move : moves) {
-            Button moveBtn = new Button(move);
-            moveBtn.setPrefWidth(100);
-            movesBox.getChildren().add(moveBtn);
-        }
-        return movesBox;
-    }
-
-    // Crée le panneau de changement de Pokémon avec 6 boutons
-    private static HBox createSwitchPanel(HelloApplication app) {
-        HBox switchBox = new HBox(10);
-        switchBox.setAlignment(Pos.CENTER);
-        for (int i = 0; i < 6; i++) {
-            Button btn = new Button();
-            btn.setPrefWidth(100);
-            if (i < app.teamPlayer1.size()) {
-                Pokemon p = app.teamPlayer1.get(i);
-                btn.setText(p.getName() + "\nHP:" + p.getHP());
-                if (i == 0) {
-                    btn.setDisable(true);
-                    btn.setStyle("-fx-background-color: lightgray;");
+    // Gère l'attaque du joueur suivie de la contre-attaque de l'ordinateur
+    private static void handleMoveButton(PokemonBattleSimulator app, Button moveButton, TextArea battleLog,
+                                         Label p1NameLabel, ProgressBar p1HPBar, Label p1HPLabel,
+                                         Label p2NameLabel, ProgressBar p2HPBar, Label p2HPLabel) {
+        Pokemon playerPokemon = app.teamPlayer1.isEmpty() ? null : app.teamPlayer1.get(0);
+        Pokemon compPokemon = app.teamPlayer2.isEmpty() ? null : app.teamPlayer2.get(0);
+        if (playerPokemon != null && compPokemon != null) {
+            // Recherche de l'index de l'attaque
+            int moveIndex = -1;
+            for (int i = 0; i < playerPokemon.getMoves().size(); i++) {
+                if (playerPokemon.getMoves().get(i).toString().equals(moveButton.getText())) {
+                    moveIndex = i;
+                    break;
                 }
-                int index = i;
-                btn.setOnAction(e -> {
-                    if (index != 0) {
-                        Pokemon temp = app.teamPlayer1.get(0);
-                        app.teamPlayer1.set(0, app.teamPlayer1.get(index));
-                        app.teamPlayer1.set(index, temp);
-                        activePokemonPane.getChildren().clear();
-                        activePokemonPane.getChildren().addAll(createActivePokemonPane(app).getChildren());
-                        updateSwitchPanel(app, switchBox);
-                    }
-                });
-            } else {
-                btn.setText("Vide");
-                btn.setDisable(true);
             }
-            switchBox.getChildren().add(btn);
+            // Si l'attaque existe
+            if (moveIndex >= 0 && moveIndex < playerPokemon.getMoves().size()) {
+                Attack move = playerPokemon.getMoves().get(moveIndex);
+                int damage = playerPokemon.calculateDamage(compPokemon, move);
+                double multiplier = playerPokemon.calculateMultiplier(compPokemon);
+                compPokemon.receiveDamage(damage);
+                battleLog.appendText(playerPokemon.getName() + " utilise " + move.getName() +
+                        " et inflige " + damage + " dégâts.\n");
+                if (multiplier > 1.0) {
+                    battleLog.appendText("C'est super efficace !\n");
+                } else if (multiplier < 1.0) {
+                    battleLog.appendText("Ce n'est pas très efficace...\n");
+                } else {
+                    battleLog.appendText("Attaque normale.\n");
+                }
+                // On applique l'effet secondaire
+                move.applyEffect(playerPokemon, compPokemon, damage, battleLog);
+
+                // On met à jour l'interface
+                updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel,
+                        p2NameLabel, p2HPBar, p2HPLabel);
+
+                // Vérifie si le Pokémon adverse est KO
+                if (compPokemon.getCurrentHP() <= 0) {
+                    battleLog.appendText(compPokemon.getName() + " est KO !\n");
+                    return;
+                }
+
+                // Tour de l'ordinateur
+                if (multiplier > 1.0 && app.teamPlayer2.size() > 1) {
+                    // Si l'attaque du joueur est super efficace, l'ordinateur change de Pokémon
+                    Random random = new Random();
+                    int switchIndex = random.nextInt(app.teamPlayer2.size() - 1) + 1;
+                    Pokemon newActive = app.teamPlayer2.get(switchIndex);
+                    app.teamPlayer2.set(switchIndex, compPokemon);
+                    app.teamPlayer2.set(0, newActive);
+                    battleLog.appendText("L'ordinateur change de Pokémon en raison d'une attaque super efficace !\n");
+                    updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel,
+                            p2NameLabel, p2HPBar, p2HPLabel);
+
+                } else {
+                    // L'IA attaque si son Pokémon est toujours vivant
+                    if (!compPokemon.getMoves().isEmpty() && compPokemon.getCurrentHP() > 0) {
+                        Random random = new Random();
+                        Attack compMove = compPokemon.getMoves().get(random.nextInt(compPokemon.getMoves().size()));
+                        int compDamage = compPokemon.calculateDamage(playerPokemon, compMove);
+                        double compMultiplier = compPokemon.calculateMultiplier(playerPokemon);
+                        playerPokemon.receiveDamage(compDamage);
+                        battleLog.appendText(compPokemon.getName() + " contre-attaque avec " + compMove.getName() +
+                                " et inflige " + compDamage + " dégâts.\n");
+                        if (compMultiplier > 1.0) {
+                            battleLog.appendText("C'est super efficace !\n");
+                        } else if (compMultiplier < 1.0) {
+                            battleLog.appendText("Ce n'est pas très efficace...\n");
+                        } else {
+                            battleLog.appendText("Attaque normale.\n");
+                        }
+                        compMove.applyEffect(compPokemon, playerPokemon, compDamage, battleLog);
+                        updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel,
+                                p2NameLabel, p2HPBar, p2HPLabel);
+                    }
+                }
+            }
         }
-        return switchBox;
     }
 
-    private static void updateSwitchPanel(HelloApplication app, HBox switchBox) {
-        switchBox.getChildren().clear();
-        for (int i = 0; i < 6; i++) {
-            Button btn = new Button();
-            btn.setPrefWidth(100);
-            if (i < app.teamPlayer1.size()) {
-                Pokemon p = app.teamPlayer1.get(i);
-                btn.setText(p.getName() + "\nHP:" + p.getHP());
-                if (i == 0) {
-                    btn.setDisable(true);
-                    btn.setStyle("-fx-background-color: lightgray;");
-                }
-                int index = i;
-                btn.setOnAction(e -> {
-                    if (index != 0) {
-                        Pokemon temp = app.teamPlayer1.get(0);
-                        app.teamPlayer1.set(0, app.teamPlayer1.get(index));
-                        app.teamPlayer1.set(index, temp);
-                        activePokemonPane.getChildren().clear();
-                        activePokemonPane.getChildren().addAll(createActivePokemonPane(app).getChildren());
-                        updateSwitchPanel(app, switchBox);
-                    }
-                });
-            } else {
-                btn.setText("Vide");
-                btn.setDisable(true);
-            }
-            switchBox.getChildren().add(btn);
+    // Met à jour l'affichage (nom, HP, statut)
+    public static void updateActivePokemonInfo(PokemonBattleSimulator app,
+                                               Label p1NameLabel, ProgressBar p1HPBar, Label p1HPLabel,
+                                               Label p2NameLabel, ProgressBar p2HPBar, Label p2HPLabel) {
+        Pokemon active1 = app.teamPlayer1.isEmpty() ? null : app.teamPlayer1.get(0);
+        Pokemon active2 = app.teamPlayer2.isEmpty() ? null : app.teamPlayer2.get(0);
+
+        // Joueur 1
+        if (active1 != null) {
+            p1NameLabel.setText(active1.getName() + (active1.isMegaEvolved() ? " (Mega)" : ""));
+            p1HPBar.setProgress(active1.getCurrentHP() / (double) active1.getMaxHP());
+            p1HPLabel.setText("HP: " + active1.getCurrentHP() + "/" + active1.getMaxHP());
+            updateStatusColor(active1, p1StatusRect);
+        } else {
+            p1NameLabel.setText("Aucun");
+            p1HPBar.setProgress(0);
+            p1HPLabel.setText("HP: 0");
+            p1StatusRect.setFill(Color.TRANSPARENT);
         }
+
+        // Ordinateur
+        if (active2 != null) {
+            p2NameLabel.setText(active2.getName() + (active2.isMegaEvolved() ? " (Mega)" : ""));
+            p2HPBar.setProgress(active2.getCurrentHP() / (double) active2.getMaxHP());
+            p2HPLabel.setText("HP: " + active2.getCurrentHP() + "/" + active2.getMaxHP());
+            updateStatusColor(active2, p2StatusRect);
+        } else {
+            p2NameLabel.setText("Aucun");
+            p2HPBar.setProgress(0);
+            p2HPLabel.setText("HP: 0");
+            p2StatusRect.setFill(Color.TRANSPARENT);
+        }
+    }
+
+    // Met à jour la couleur du petit carré en fonction du statut
+    private static void updateStatusColor(Pokemon pokemon, Rectangle rect) {
+        if (pokemon == null) {
+            rect.setFill(Color.TRANSPARENT);
+            return;
+        }
+        switch (pokemon.getStatus()) {
+            case BURN:
+                rect.setFill(Color.RED);
+                break;
+            case POISON:
+                rect.setFill(Color.PURPLE);
+                break;
+            case PARALYSIS:
+                rect.setFill(Color.YELLOW);
+                break;
+            default:
+                rect.setFill(Color.TRANSPARENT);
+        }
+    }
+
+    // Met à jour les boutons d'attaque (4 max)
+    public static void updateMoveButtons(PokemonBattleSimulator app,
+                                         Button btn1, Button btn2, Button btn3, Button btn4) {
+        Pokemon active1 = app.teamPlayer1.isEmpty() ? null : app.teamPlayer1.get(0);
+        if (active1 != null) {
+            btn1.setText("");
+            btn2.setText("");
+            btn3.setText("");
+            btn4.setText("");
+            for (int i = 0; i < active1.getMoves().size() && i < 4; i++) {
+                Attack move = active1.getMoves().get(i);
+                btnSetText(i, move, btn1, btn2, btn3, btn4);
+            }
+        }
+    }
+
+    private static void btnSetText(int index, Attack move,
+                                   Button btn1, Button btn2, Button btn3, Button btn4) {
+        String txt = move.toString(); // ex : "Lance-flamme (Spe)"
+        if (index == 0) btn1.setText(txt);
+        if (index == 1) btn2.setText(txt);
+        if (index == 2) btn3.setText(txt);
+        if (index == 3) btn4.setText(txt);
     }
 }

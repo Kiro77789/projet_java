@@ -1,26 +1,26 @@
 package com.example.projet_java;
 
-import java.util.HashMap;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class TypeDatabase {
     private static final HashMap<String, Types> types = new HashMap<>();
 
     static {
         types.put("Feu", new Types("Feu",
-                Arrays.asList("Plante", "Glace", "Insecte", "Acier"), // Fort contre
-                Arrays.asList("Eau", "Roche", "Sol"), // Faible contre
-                Arrays.asList("Feu", "Plante", "Glace", "Insecte", "Acier", "Fée"))); // Résiste à
+                Arrays.asList("Plante", "Glace", "Insecte", "Acier"),
+                Arrays.asList("Eau", "Roche", "Sol"),
+                Arrays.asList("Feu", "Plante", "Glace", "Insecte", "Acier", "Fée")));
 
         types.put("Eau", new Types("Eau",
                 Arrays.asList("Feu", "Roche", "Sol"),
-                Arrays.asList("Électrik", "Plante"),
+                Arrays.asList("Électrique", "Plante"),
                 Arrays.asList("Eau", "Glace", "Acier", "Feu")));
 
         types.put("Plante", new Types("Plante",
                 Arrays.asList("Eau", "Roche", "Sol"),
                 Arrays.asList("Feu", "Glace", "Poison", "Vol", "Insecte"),
-                Arrays.asList("Eau", "Électrik", "Sol")));
+                Arrays.asList("Eau", "Électrique", "Sol")));
 
         types.put("électrique", new Types("électrique",
                 Arrays.asList("Eau", "Vol"),
@@ -36,6 +36,7 @@ public class TypeDatabase {
                 Arrays.asList("Plante", "Combat", "Insecte"),
                 Arrays.asList("électrique", "Glace", "Roche"),
                 Arrays.asList("Combat", "Insecte")));
+        // D'autres types peuvent être ajoutés ici
     }
 
     public static Types getType(String name) {

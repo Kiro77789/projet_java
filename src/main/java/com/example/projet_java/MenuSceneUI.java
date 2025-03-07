@@ -8,15 +8,14 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
 public class MenuSceneUI {
-
-    public static Scene getScene(HelloApplication app) {
+    public static Scene getScene(PokemonBattleSimulator app) {
         BorderPane root = new BorderPane();
-        Label title = new Label("Pokémon Shutdown");
+        Label title = new Label("Simulateur de Combat Pokémon");
         title.setStyle("-fx-font-size: 36px;");
         BorderPane.setAlignment(title, Pos.CENTER);
         root.setTop(title);
 
-        Button playButton = new Button("Jouer");
+        Button playButton = new Button("Créer une équipe");
         Button creditsButton = new Button("Crédits");
         VBox buttons = new VBox(20, playButton, creditsButton);
         buttons.setAlignment(Pos.CENTER);

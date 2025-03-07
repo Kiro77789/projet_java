@@ -15,21 +15,19 @@ public class TeamSelectionUI {
     private static GridPane teamGrid;
     private static Label teamSelectionLabel;
 
-    public static Scene getScene(HelloApplication app) {
+    public static Scene getScene(PokemonBattleSimulator app) {
         BorderPane root = new BorderPane();
 
-        // Haut : Label indiquant le joueur courant
-        teamSelectionLabel = new Label();
+        teamSelectionLabel = new Label("Joueur " + app.currentPlayer + " - Sélectionnez vos Pokémon");
         teamSelectionLabel.setStyle("-fx-font-size: 24px;");
-        updateTeamSelectionLabel(app);
         root.setTop(teamSelectionLabel);
         BorderPane.setAlignment(teamSelectionLabel, Pos.CENTER);
 
-        // Gauche : Liste scrollable des Pokémon disponibles
+        // Liste des Pokémon disponibles
         VBox availableList = new VBox(10);
         availableList.setPadding(new Insets(10));
         for (Pokemon p : app.availablePokemons) {
-            Button btn = new Button(p.getName() + " | HP:" + p.getHP() + " Att:" + p.getAttack());
+            Button btn = new Button(p.getName() + " (HP: " + p.getCurrentHP() + ")");
             btn.setMaxWidth(Double.MAX_VALUE);
             btn.setOnAction(e -> addPokemonToTeam(app, p));
             availableList.getChildren().add(btn);
@@ -38,7 +36,7 @@ public class TeamSelectionUI {
         scrollPane.setFitToWidth(true);
         root.setLeft(scrollPane);
 
-        // Centre : Grille de 6 cases pour afficher l’équipe sélectionnée
+        // Grille pour afficher l’équipe sélectionnée (6 cases)
         teamGrid = new GridPane();
         teamGrid.setPadding(new Insets(10));
         teamGrid.setHgap(10);
@@ -49,7 +47,6 @@ public class TeamSelectionUI {
         }
         root.setCenter(teamGrid);
 
-        // Bas : Bouton de validation de l’équipe
         Button validateButton = new Button("Valider l'équipe");
         validateButton.setOnAction(e -> {
             if ((app.currentPlayer == 1 && app.teamPlayer1.isEmpty()) ||
@@ -58,7 +55,7 @@ public class TeamSelectionUI {
             } else {
                 if (app.currentPlayer == 1) {
                     app.currentPlayer = 2;
-                    updateTeamSelectionLabel(app);
+                    teamSelectionLabel.setText("Joueur " + app.currentPlayer + " - Sélectionnez vos Pokémon");
                     clearTeamGrid();
                 } else {
                     app.showCombatScene();
@@ -73,22 +70,26 @@ public class TeamSelectionUI {
         return new Scene(root, 800, 600);
     }
 
-    public static void updateTeamSelectionLabel(HelloApplication app) {
-        if (teamSelectionLabel != null) {
-            teamSelectionLabel.setText("Joueur " + app.currentPlayer + " - Choisissez vos Pokémons:");
-        }
+    private static VBox createEmptySlot() {
+        VBox slot = new VBox(5);
+        slot.setAlignment(Pos.CENTER);
+        slot.setPrefSize(150, 100);
+        slot.setStyle("-fx-border-color: black; -fx-border-width: 1;");
+        slot.getChildren().add(new Label("Vide"));
+        return slot;
     }
 
-    public static void addPokemonToTeam(HelloApplication app, Pokemon p) {
+    public static void addPokemonToTeam(PokemonBattleSimulator app, Pokemon p) {
         for (javafx.scene.Node node : teamGrid.getChildren()) {
             VBox slot = (VBox) node;
-            if (slot.getUserData() == null) { // case vide
+            if (slot.getUserData() == null) {
                 slot.getChildren().clear();
-                Label info = new Label(p.getName() + "\nHP:" + p.getHP() + "\nAtt:" + p.getAttack());
+                Label info = new Label(p.getName() + "\nHP: " + p.getCurrentHP());
+                // Bouton pour supprimer le Pokémon de l'équipe
                 Button deleteButton = new Button("Supprimer");
                 deleteButton.setOnAction(e -> {
                     slot.getChildren().clear();
-                    slot.getChildren().add(new Label(""));
+                    slot.getChildren().add(new Label("Vide"));
                     slot.setUserData(null);
                     if (app.currentPlayer == 1) {
                         app.teamPlayer1.remove(p);
@@ -96,10 +97,13 @@ public class TeamSelectionUI {
                         app.teamPlayer2.remove(p);
                     }
                 });
-                // Nouveau bouton Modifier pour modifier les capacités
-                Button modifyButton = new Button("Modifier");
-                modifyButton.setOnAction(e -> MovesModificationUI.show(app, p));
-                slot.getChildren().addAll(info, deleteButton, modifyButton);
+                // Bouton pour modifier (attribuer) les attaques du Pokémon
+                Button modifyMovesButton = new Button("Modifier Moves");
+                modifyMovesButton.setOnAction(e -> {
+                    MoveModificationUI.showMoveModificationDialog(p);
+                    info.setText(p.getName() + "\nHP: " + p.getCurrentHP() + "\nMoves: " + p.getMoves());
+                });
+                slot.getChildren().addAll(info, modifyMovesButton, deleteButton);
                 slot.setUserData(p);
                 if (app.currentPlayer == 1) {
                     app.teamPlayer1.add(p);
@@ -111,21 +115,14 @@ public class TeamSelectionUI {
         }
     }
 
-    private static VBox createEmptySlot() {
-        VBox slot = new VBox(5);
-        slot.setAlignment(Pos.CENTER);
-        slot.setPrefSize(150, 100);
-        slot.setStyle("-fx-border-color: black; -fx-border-width: 1;");
-        slot.getChildren().add(new Label(""));
-        return slot;
-    }
-
-    public static void clearTeamGrid() {
+    private static void clearTeamGrid() {
         for (javafx.scene.Node node : teamGrid.getChildren()) {
             VBox slot = (VBox) node;
             slot.getChildren().clear();
-            slot.getChildren().add(new Label(""));
+            slot.getChildren().add(new Label("Vide"));
             slot.setUserData(null);
         }
     }
+
+
 }
