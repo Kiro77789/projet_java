@@ -2,7 +2,7 @@ package com.example.projet_java;
 
 import javafx.scene.control.TextArea;
 
-class DrainEffect implements AttackEffect {
+public class DrainEffect implements AttackEffect {
     @Override
     public void apply(Pokemon attacker, Pokemon defender, int damage, TextArea battleLog) {
         int healAmount = damage / 2;

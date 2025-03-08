@@ -2,7 +2,8 @@ package com.example.projet_java;
 
 public enum Status {
     NONE,
-    PARALYSIS,
+    BURN,
     POISON,
-    BURN
+    PARALYSIS,
+    SLEEP
 }

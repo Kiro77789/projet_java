@@ -2,7 +2,7 @@ package com.example.projet_java;
 
 import javafx.scene.control.TextArea;
 
-class RecoilEffect implements AttackEffect {
+public class RecoilEffect implements AttackEffect {
     private double fraction;
 
     public RecoilEffect(double fraction) {

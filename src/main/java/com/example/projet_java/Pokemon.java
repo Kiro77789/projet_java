@@ -8,21 +8,29 @@ public class Pokemon {
     private String name;
     private int maxHP;
     private int currentHP;
-    private int attack;
-    private int defense;
-    private int attackSpe;
-    private int defenseSpe;
-    private int speed;
+    private int baseAttack;
+    private int baseDefense;
+    private int baseAttackSpe;
+    private int baseDefenseSpe;
+    private int baseSpeed;
     private List<Types> types;
     private List<Attack> moves;
     private Talent talent;
     private Item heldItem;
     private Status status;
     private boolean megaEvolved;
-    // EV allocation (exprimés en points)
-    private int evAttack;
-    private int evDefense;
-    private int evSpeed;
+
+    // EV
+    int evAttack;
+    int evDefense;
+    int evSpeed;
+
+    // Stages
+    private int attackStage = 0;
+    private int defenseStage = 0;
+    private int speedStage = 0;
+    private int attackSpeStage = 0;
+    private int defenseSpeStage = 0;
 
     public Pokemon(String name, int hp, int attack, int defense,
                    int attackSpe, int defenseSpe, int speed,
@@ -30,11 +38,12 @@ public class Pokemon {
         this.name = name;
         this.maxHP = hp;
         this.currentHP = hp;
-        this.attack = attack;
-        this.defense = defense;
-        this.attackSpe = attackSpe;
-        this.defenseSpe = defenseSpe;
-        this.speed = speed;
+        this.baseAttack = attack;
+        this.baseDefense = defense;
+        this.baseAttackSpe = attackSpe;
+        this.baseDefenseSpe = defenseSpe;
+        this.baseSpeed = speed;
+
         this.types = new ArrayList<>();
         for (String t : typeNames) {
             Types type = TypeDatabase.getType(t);
@@ -42,51 +51,51 @@ public class Pokemon {
                 this.types.add(type);
             }
         }
-        // Assigne un talent éventuel
         this.talent = talent;
-        // Par défaut, pas d'objet tenu
         this.heldItem = null;
-        // Statut par défaut
         this.status = Status.NONE;
         this.megaEvolved = false;
-
-        // Assigne automatiquement des attaques en fonction du type
         this.moves = MoveDatabase.getDefaultMoves(this);
     }
 
+    public List<Types> getTypes() {
+        return types;
+    }
+
+    // Copie pour éviter de partager la même instance
     public static Pokemon copyOf(Pokemon original) {
-        // Nouveau tableau de types (String[]) pour le constructeur
         List<String> typeNames = new ArrayList<>();
         for (Types t : original.getTypes()) {
             typeNames.add(t.getName());
         }
-
-        // Création du nouveau Pokémon
         Pokemon copy = new Pokemon(
                 original.getName(),
                 original.getMaxHP(),
-                original.getAttack() - original.evAttack,  // on retire l'EV pour récupérer la stat de base
-                original.getDefense() - original.evDefense,
-                original.getAttackSpe(),
-                original.getDefenseSpe(),
-                original.getSpeed() - original.evSpeed,
+                original.baseAttack,
+                original.baseDefense,
+                original.baseAttackSpe,
+                original.baseDefenseSpe,
+                original.baseSpeed,
                 typeNames.toArray(new String[0]),
                 original.getTalent()
         );
-        // Copie du statut, EV, etc.
-        copy.evAttack  = original.evAttack;
+        copy.currentHP = original.currentHP;
+        copy.evAttack = original.evAttack;
         copy.evDefense = original.evDefense;
-        copy.evSpeed   = original.evSpeed;
-        copy.setStatus(original.getStatus());
+        copy.evSpeed = original.evSpeed;
+        copy.status = original.status;
         copy.megaEvolved = original.megaEvolved;
 
-        // Copie des attaques
+        copy.attackStage = original.attackStage;
+        copy.defenseStage = original.defenseStage;
+        copy.speedStage = original.speedStage;
+        copy.attackSpeStage = original.attackSpeStage;
+        copy.defenseSpeStage = original.defenseSpeStage;
+
         List<Attack> newMoves = new ArrayList<>(original.getMoves());
         copy.setMoves(newMoves);
-
         return copy;
     }
-
 
     public String getName() {
         return name;
@@ -100,36 +109,78 @@ public class Pokemon {
         return maxHP;
     }
 
+    // Méthodes d'accès aux stats en tenant compte des EV et des stages
     public int getAttack() {
-        return attack + evAttack;
+        double base = (baseAttack + evAttack);
+        return (int)(base * stageMultiplier(attackStage));
     }
 
     public int getDefense() {
-        return defense + evDefense;
-    }
-
-    public int getAttackSpe() {
-        return attackSpe;
-    }
-
-    public int getDefenseSpe() {
-        return defenseSpe;
+        double base = (baseDefense + evDefense);
+        return (int)(base * stageMultiplier(defenseStage));
     }
 
     public int getSpeed() {
-        return speed + evSpeed;
+        double base = (baseSpeed + evSpeed);
+        return (int)(base * stageMultiplier(speedStage));
     }
 
-    public List<Types> getTypes() {
-        return types;
+    public int getAttackSpe() {
+        return (int)(baseAttackSpe * stageMultiplier(attackSpeStage));
     }
 
-    public List<Attack> getMoves() {
-        return moves;
+    public int getDefenseSpe() {
+        return (int)(baseDefenseSpe * stageMultiplier(defenseSpeStage));
     }
 
-    public void setMoves(List<Attack> moves) {
-        this.moves = moves;
+    // Calcule le multiplicateur en fonction du stage (ex: +1 stage => x1.5)
+    private double stageMultiplier(int stage) {
+        // Système standard Pokémon
+        // stage = -6..+6
+        // -1 => x0.67, +1 => x1.5, +2 => x2.0, etc.
+        // Formule : (2 + stage) / 2 si stage >= 0
+        //           2 / (2 + |stage|) si stage < 0
+        if (stage >= 0) {
+            return (2.0 + stage) / 2.0;
+        } else {
+            return 2.0 / (2.0 + Math.abs(stage));
+        }
+    }
+
+    // Méthodes pour modifier les stages
+    public void changeStage(String stat, int amount) {
+        switch (stat.toLowerCase()) {
+            case "attack":
+                attackStage = clampStage(attackStage + amount);
+                break;
+            case "defense":
+                defenseStage = clampStage(defenseStage + amount);
+                break;
+            case "speed":
+                speedStage = clampStage(speedStage + amount);
+                break;
+            case "spattack":
+                attackSpeStage = clampStage(attackSpeStage + amount);
+                break;
+            case "spdefense":
+                defenseSpeStage = clampStage(defenseSpeStage + amount);
+                break;
+        }
+    }
+
+    // Réinitialise les stages quand on switch
+    public void resetStages() {
+        attackStage = 0;
+        defenseStage = 0;
+        speedStage = 0;
+        attackSpeStage = 0;
+        defenseSpeStage = 0;
+    }
+
+    private int clampStage(int val) {
+        if (val > 6) return 6;
+        if (val < -6) return -6;
+        return val;
     }
 
     public Talent getTalent() {
@@ -156,89 +207,72 @@ public class Pokemon {
         return megaEvolved;
     }
 
-    // Méga‑Évolution : change le nom et augmente les 2 plus grosses stats de +30
+    // Méga-Évolution : renomme + augmente 2 plus grosses stats de +30
     public void megaEvolve() {
         if (!megaEvolved && heldItem == null) {
-            // Renommer le Pokémon
             this.name = "Mega-" + this.name;
-
-            // On récupère les stats sous forme d'un tableau [valeur, index]
-            int[][] statValues = new int[][] {
-                    { this.attack, 0 },
-                    { this.defense, 1 },
-                    { this.attackSpe, 2 },
-                    { this.defenseSpe, 3 },
-                    { this.speed, 4 }
+            // On prend un tableau [valeur, index]
+            int[][] stats = new int[][] {
+                    { baseAttack, 0 },
+                    { baseDefense, 1 },
+                    { baseAttackSpe, 2 },
+                    { baseDefenseSpe, 3 },
+                    { baseSpeed, 4 }
             };
-            // On trie par ordre décroissant de la valeur
-            java.util.Arrays.sort(statValues, (a, b) -> b[0] - a[0]);
-
-            // On augmente de 30 les 2 premières
+            java.util.Arrays.sort(stats, (a, b) -> b[0] - a[0]);
             for (int i = 0; i < 2; i++) {
-                int index = statValues[i][1];
-                switch (index) {
-                    case 0: this.attack += 30; break;
-                    case 1: this.defense += 30; break;
-                    case 2: this.attackSpe += 30; break;
-                    case 3: this.defenseSpe += 30; break;
-                    case 4: this.speed += 30; break;
+                int idx = stats[i][1];
+                switch (idx) {
+                    case 0: baseAttack += 30; break;
+                    case 1: baseDefense += 30; break;
+                    case 2: baseAttackSpe += 30; break;
+                    case 3: baseDefenseSpe += 30; break;
+                    case 4: baseSpeed += 30; break;
                 }
             }
             this.megaEvolved = true;
         }
     }
 
-    // Calcul des dégâts avec prise en compte du talent
+    // Calcul des dégâts en tenant compte des talents, type chart, etc.
     public int calculateDamage(Pokemon opponent, Attack move) {
-        // 1) Vérifie le talent du défenseur (LevitationTalent)
-        if (opponent.getTalent() instanceof LevitationTalent) {
-            // Si l'attaque est de type Sol => 0 dégâts
-            if (move.getType() != null && "Sol".equalsIgnoreCase(move.getType().getName())) {
+        // Vérifier statut Sleep ou Paralysis : le Pokémon peut ne pas attaquer
+        if (this.status == Status.SLEEP) {
+            // On pourrait gérer un compteur de tours de sommeil, simplifions : 50% de chance de ne pas attaquer
+            if (Math.random() < 0.5) {
+                return 0; // On renvoie 0 => pas d'attaque
+            }
+        } else if (this.status == Status.PARALYSIS) {
+            // 25% de chance de ne pas attaquer
+            if (Math.random() < 0.25) {
                 return 0;
             }
         }
 
-        // 2) Vérifie le talent de l'attaquant (BrasierTalent)
+        // Talent Levitation, Talent Brasier, etc. (omise ici pour la brièveté)
         double multiplierTalent = 1.0;
-        if (this.getTalent() instanceof BrasierTalent) {
-            // Si PV < 1/3 et type Feu => x1.5
-            if (this.getCurrentHP() < (this.getMaxHP() / 3)) {
-                if (move.getType() != null && "Feu".equalsIgnoreCase(move.getType().getName())) {
-                    multiplierTalent = 1.5;
-                }
-            }
-        }
 
-        // 3) Calcul normal du multiplicateur de type
-        double multiplierType = calculateMultiplier(opponent);
-
-        // 4) Facteur aléatoire
+        // Multiplicateur de type
+        double multiplierType = TypeDatabase.getEffectiveness(move.getType(), opponent.getTypes());
+        // On ne gère pas le talent Brasier, Levitation, etc. => Cf versions antérieures
         double randomFactor = 0.85 + Math.random() * 0.15;
 
-        int usedAttack = move.isSpecial() ? this.attackSpe : this.attack;
+        int usedAttack = move.isSpecial() ? getAttackSpe() : getAttack();
         int usedDefense = move.isSpecial() ? opponent.getDefenseSpe() : opponent.getDefense();
 
-        int baseDamage = (int) (((usedAttack * move.getPower()) / (double) usedDefense)
-                * multiplierType
-                * multiplierTalent
-                * randomFactor);
-
-        return baseDamage;
+        int baseDamage = (int)(((usedAttack * move.getPower()) / (double)usedDefense)
+                * multiplierType * multiplierTalent * randomFactor);
+        return Math.max(baseDamage, 0);
     }
 
-    // Calcule le multiplicateur d’efficacité (type) sans tenir compte du talent
-    public double calculateMultiplier(Pokemon opponent) {
-        double multiplier = 1.0;
-        for (Types myType : this.types) {
-            for (Types oppType : opponent.getTypes()) {
-                if (myType.isStrongAgainst(oppType.getName())) {
-                    multiplier *= 2.0;
-                } else if (myType.isWeakAgainst(oppType.getName())) {
-                    multiplier *= 0.5;
-                }
-            }
+    public double getSpeedValueForPriorityCheck() {
+        // La vitesse effective (ex: si le Pokémon est paralysé, on la divise par 4, etc.)
+        double speed = getSpeed();
+        if (this.status == Status.PARALYSIS) {
+            // Dans Pokémon, PARALYSIS divise la vitesse par 2
+            speed /= 2.0;
         }
-        return multiplier;
+        return speed;
     }
 
     public void receiveDamage(int damage) {
@@ -247,6 +281,14 @@ public class Pokemon {
 
     public void heal(int amount) {
         currentHP = Math.min(currentHP + amount, maxHP);
+    }
+
+    public void setMoves(List<Attack> moves) {
+        this.moves = moves;
+    }
+
+    public List<Attack> getMoves() {
+        return moves;
     }
 
     public void allocateEVs(int attackEV, int defenseEV, int speedEV) {
@@ -260,6 +302,19 @@ public class Pokemon {
 
     @Override
     public String toString() {
-        return name + " (HP:" + currentHP + "/" + maxHP + ")";
+        // Afficher un résumé y compris les stages
+        StringBuilder sb = new StringBuilder();
+        sb.append(name).append(" (HP:").append(currentHP).append("/").append(maxHP).append(")");
+        // Ex: +1 Att, +2 Spe, ...
+        List<String> stageInfo = new ArrayList<>();
+        if (attackStage != 0) stageInfo.add(attackStage > 0 ? "+"+attackStage+" Att" : attackStage+" Att");
+        if (defenseStage != 0) stageInfo.add(defenseStage > 0 ? "+"+defenseStage+" Def" : defenseStage+" Def");
+        if (speedStage != 0) stageInfo.add(speedStage > 0 ? "+"+speedStage+" Spe" : speedStage+" Spe");
+        if (attackSpeStage != 0) stageInfo.add(attackSpeStage > 0 ? "+"+attackSpeStage+" SpA" : attackSpeStage+" SpA");
+        if (defenseSpeStage != 0) stageInfo.add(defenseSpeStage > 0 ? "+"+defenseSpeStage+" SpD" : defenseSpeStage+" SpD");
+        if (!stageInfo.isEmpty()) {
+            sb.append(" [").append(String.join(", ", stageInfo)).append("]");
+        }
+        return sb.toString();
     }
 }

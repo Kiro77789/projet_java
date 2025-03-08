@@ -2,7 +2,7 @@ package com.example.projet_java;
 
 import javafx.scene.control.TextArea;
 
-class StatChangeEffect implements AttackEffect {
+public class StatChangeEffect implements AttackEffect {
     private double factor;
 
     public StatChangeEffect(double factor) {

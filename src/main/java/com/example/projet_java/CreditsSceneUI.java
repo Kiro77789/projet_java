@@ -9,7 +9,7 @@ import javafx.scene.layout.BorderPane;
 public class CreditsSceneUI {
     public static Scene getScene(PokemonBattleSimulator app) {
         BorderPane root = new BorderPane();
-        Label credits = new Label("Crédits :\nProjet réalisé par [Votre Nom]\nÉtudiant en 1ère année");
+        Label credits = new Label("Crédits :\nProjet réalisé par Axel BRINON et Rayan KWASNIK\nÉtudiants en 1ère année");
         credits.setStyle("-fx-font-size: 20px;");
         root.setCenter(credits);
         Button backButton = new Button("Retour");

@@ -22,16 +22,13 @@ public class MoveModificationUI {
         grid.setVgap(10);
         grid.setPadding(new javafx.geometry.Insets(10));
 
-        // Récupérer la liste de toutes les capacités disponibles
         List<Attack> allMoves = MoveDatabase.getAllMoves();
 
-        // Création de 4 ComboBox
         ComboBox<Attack> moveBox1 = new ComboBox<>(FXCollections.observableArrayList(allMoves));
         ComboBox<Attack> moveBox2 = new ComboBox<>(FXCollections.observableArrayList(allMoves));
         ComboBox<Attack> moveBox3 = new ComboBox<>(FXCollections.observableArrayList(allMoves));
         ComboBox<Attack> moveBox4 = new ComboBox<>(FXCollections.observableArrayList(allMoves));
 
-        // Pré-sélection si des moves sont déjà définies
         List<Attack> currentMoves = pokemon.getMoves();
         if (currentMoves.size() > 0) moveBox1.setValue(currentMoves.get(0));
         if (currentMoves.size() > 1) moveBox2.setValue(currentMoves.get(1));
@@ -56,7 +53,6 @@ public class MoveModificationUI {
             Attack m3 = moveBox3.getValue();
             Attack m4 = moveBox4.getValue();
 
-            // Vérifier les doublons
             List<Attack> selectedMoves = java.util.Arrays.asList(m1, m2, m3, m4).stream()
                     .filter(m -> m != null)
                     .collect(Collectors.toList());
@@ -67,8 +63,6 @@ public class MoveModificationUI {
                 alert.showAndWait();
                 return;
             }
-
-            // Mise à jour des moves du Pokémon
             pokemon.setMoves(selectedMoves);
             dialog.close();
         });

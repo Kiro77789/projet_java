@@ -37,7 +37,6 @@ public class Attack {
         return effect;
     }
 
-    // Méthode appelée après le calcul des dégâts
     public void applyEffect(Pokemon attacker, Pokemon defender, int damage, TextArea battleLog) {
         if (effect != null) {
             effect.apply(attacker, defender, damage, battleLog);
@@ -46,7 +45,6 @@ public class Attack {
 
     @Override
     public String toString() {
-        // Affiche : "Lance-flamme (Spe)" ou "Charge (Phy)"
         return name + (isSpecial ? " (Spe)" : " (Phy)");
     }
 }

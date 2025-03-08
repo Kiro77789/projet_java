@@ -8,6 +8,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
 public class MenuSceneUI {
+
     public static Scene getScene(PokemonBattleSimulator app) {
         BorderPane root = new BorderPane();
         Label title = new Label("Simulateur de Combat Pokémon");
