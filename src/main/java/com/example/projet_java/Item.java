@@ -2,20 +2,23 @@ package com.example.projet_java;
 
 public class Item {
     private String name;
-    private ItemEffect effect;
+    private String description;
 
-    public Item(String name, ItemEffect effect) {
+    public Item(String name, String description) {
         this.name = name;
-        this.effect = effect;
+        this.description = description;
     }
 
     public String getName() {
         return name;
     }
 
-    public void applyEffect(Pokemon pokemon) {
-        if(effect != null) {
-            effect.apply(pokemon);
-        }
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

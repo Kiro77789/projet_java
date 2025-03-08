@@ -14,21 +14,17 @@ import java.util.Random;
 
 public class CombatUI {
 
-    // Rectangles pour indiquer le statut (ex. rouge pour Burn, violet pour Poison, jaune pour Paralysie)
+    // Rectangles pour afficher le statut (ex. rouge pour Burn, violet pour Poison, jaune pour Paralysie)
     private static Rectangle p1StatusRect = new Rectangle(10, 10, Color.TRANSPARENT);
     private static Rectangle p2StatusRect = new Rectangle(10, 10, Color.TRANSPARENT);
-
-    // FlowPane pour afficher la liste des Pokémon du joueur pour changer de Pokémon
-    private static FlowPane playerTeamPane = new FlowPane(10, 10);
 
     public static Scene getScene(PokemonBattleSimulator app) {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(10));
 
-        // Conteneur pour les infos de combat (panneaux HP + VS)
+        // Cadre pour les infos de combat : regroupant les panneaux HP du joueur et de l'IA ainsi que "VS"
         BorderPane battleInfoPane = new BorderPane();
         battleInfoPane.setPadding(new Insets(10));
-        // Appliquer une bordure autour de l'ensemble
         battleInfoPane.setStyle("-fx-border-color: gray; -fx-border-width: 2;");
 
         // Panneau Joueur (gauche)
@@ -60,7 +56,6 @@ public class CombatUI {
         vsLabel.setFont(Font.font(20));
         StackPane vsPane = new StackPane(vsLabel);
         vsPane.setPrefSize(100, 100);
-        // Le contour de vsPane n'est plus nécessaire car battleInfoPane a sa bordure
 
         battleInfoPane.setLeft(p1Info);
         battleInfoPane.setCenter(vsPane);
@@ -68,7 +63,7 @@ public class CombatUI {
         root.setTop(battleInfoPane);
         BorderPane.setAlignment(battleInfoPane, Pos.CENTER);
 
-        // Zone centrale : 4 boutons d'attaque
+        // Zone centrale : 4 boutons d'attaque et un HBox pour les actions (switch & mega)
         VBox centerPanel = new VBox(10);
         centerPanel.setAlignment(Pos.CENTER);
         HBox moveButtonsPane = new HBox(10);
@@ -83,25 +78,17 @@ public class CombatUI {
         moveButton4.setPrefWidth(150);
         moveButtonsPane.getChildren().addAll(moveButton1, moveButton2, moveButton3, moveButton4);
 
-        // FlowPane pour le menu de changement de Pokémon directement sous les attaques
-        playerTeamPane.setAlignment(Pos.CENTER);
-        playerTeamPane.setPadding(new Insets(10));
-        updatePlayerTeamPane(app, null, p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel);
-
-        // Bouton Mega Évolution
+        // Boutons d'action sous les attaques : Changer de Pokémon et Mega Évolution
+        HBox actionButtons = new HBox(20);
+        actionButtons.setAlignment(Pos.CENTER);
+        Button switchButton = new Button("Changer de Pokémon");
         Button megaButton = new Button("Mega Évolution");
-        megaButton.setOnAction(e -> {
-            Pokemon active = app.teamPlayer1.isEmpty() ? null : app.teamPlayer1.get(0);
-            if (active != null && !active.isMegaEvolved()) {
-                active.megaEvolve();
-            }
-            updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel);
-        });
+        actionButtons.getChildren().addAll(switchButton, megaButton);
 
-        centerPanel.getChildren().addAll(moveButtonsPane, megaButton, playerTeamPane);
+        centerPanel.getChildren().addAll(moveButtonsPane, actionButtons);
         root.setCenter(centerPanel);
 
-        // Zone inférieure : historique
+        // Zone inférieure : historique de combat
         TextArea battleLog = new TextArea();
         battleLog.setEditable(false);
         battleLog.setWrapText(true);
@@ -109,54 +96,73 @@ public class CombatUI {
         battleLog.setStyle("-fx-control-inner-background: #333; -fx-text-fill: #fff; -fx-font-family: monospace;");
         root.setBottom(battleLog);
 
-        updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel);
+        updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel,
+                p2NameLabel, p2HPBar, p2HPLabel);
         updateMoveButtons(app, moveButton1, moveButton2, moveButton3, moveButton4);
 
-        // Actions pour les boutons d'attaque
+        // Action pour les boutons d'attaque
         moveButton1.setOnAction(e -> handleMoveButton(app, moveButton1, battleLog,
-                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel));
+                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel, root));
         moveButton2.setOnAction(e -> handleMoveButton(app, moveButton2, battleLog,
-                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel));
+                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel, root));
         moveButton3.setOnAction(e -> handleMoveButton(app, moveButton3, battleLog,
-                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel));
+                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel, root));
         moveButton4.setOnAction(e -> handleMoveButton(app, moveButton4, battleLog,
-                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel));
+                p1NameLabel, p1HPBar, p1HPLabel, p2NameLabel, p2HPBar, p2HPLabel, root));
+
+        // Bouton pour changer de Pokémon via ChoiceDialog (ancien design)
+        switchButton.setOnAction(e -> {
+            java.util.List<Pokemon> team = app.teamPlayer1;
+            if (team.size() <= 1) {
+                battleLog.appendText("Aucun autre Pokémon disponible pour changer.\n");
+                return;
+            }
+            java.util.List<Pokemon> available = new java.util.ArrayList<>();
+            for (int i = 1; i < team.size(); i++) {
+                Pokemon p = team.get(i);
+                if (p.getCurrentHP() > 0) {
+                    available.add(p);
+                }
+            }
+            if (available.isEmpty()) {
+                battleLog.appendText("Tous vos Pokémon sont KO. Vous avez perdu.\n");
+                endBattle(battleLog, root, "Défaite");
+                return;
+            }
+            ChoiceDialog<Pokemon> dialog = new ChoiceDialog<>(available.get(0), available);
+            dialog.setTitle("Changer de Pokémon");
+            dialog.setHeaderText("Sélectionnez le Pokémon à envoyer");
+            dialog.setContentText("Choix :");
+            Optional<Pokemon> result = dialog.showAndWait();
+            if (result.isPresent()) {
+                Pokemon selected = result.get();
+                team.remove(selected);
+                team.add(0, selected);
+                battleLog.appendText("Vous envoyez " + selected.getName() + " !\n");
+                updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel,
+                        p2NameLabel, p2HPBar, p2HPLabel);
+                updateMoveButtons(app, moveButton1, moveButton2, moveButton3, moveButton4);
+            }
+        });
+
+        // Bouton Mega Évolution
+        megaButton.setOnAction(e -> {
+            Pokemon active = app.teamPlayer1.isEmpty() ? null : app.teamPlayer1.get(0);
+            if (active != null && !active.isMegaEvolved()) {
+                active.megaEvolve();
+            }
+            updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel,
+                    p2NameLabel, p2HPBar, p2HPLabel);
+        });
 
         return new Scene(root, 1000, 600);
     }
 
-    private static void updatePlayerTeamPane(PokemonBattleSimulator app, TextArea battleLog,
-                                             Label p1NameLabel, ProgressBar p1HPBar, Label p1HPLabel,
-                                             Label p2NameLabel, ProgressBar p2HPBar, Label p2HPLabel) {
-        playerTeamPane.getChildren().clear();
-        for (int i = 0; i < app.teamPlayer1.size(); i++) {
-            final int index = i;
-            final Pokemon p = app.teamPlayer1.get(i);
-            Button pokeBtn = new Button(p.getName() + " (HP: " + p.getCurrentHP() + ")");
-            pokeBtn.setOnAction(new javafx.event.EventHandler<javafx.event.ActionEvent>() {
-                @Override
-                public void handle(javafx.event.ActionEvent e) {
-                    if (index == 0) return;
-                    Pokemon currentActive = app.teamPlayer1.get(0);
-                    app.teamPlayer1.set(0, p);
-                    app.teamPlayer1.set(index, currentActive);
-                    if (battleLog != null) {
-                        battleLog.appendText("Vous envoyez " + p.getName() + " !\n");
-                    }
-                    updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel,
-                            p2NameLabel, p2HPBar, p2HPLabel);
-                    updateMoveButtons(app, null, null, null, null);
-                    updatePlayerTeamPane(app, battleLog, p1NameLabel, p1HPBar, p1HPLabel,
-                            p2NameLabel, p2HPBar, p2HPLabel);
-                }
-            });
-            playerTeamPane.getChildren().add(pokeBtn);
-        }
-    }
-
+    // Gère l'attaque en comparant les vitesses (le plus rapide attaque en premier)
     private static void handleMoveButton(PokemonBattleSimulator app, Button moveButton, TextArea battleLog,
                                          Label p1NameLabel, ProgressBar p1HPBar, Label p1HPLabel,
-                                         Label p2NameLabel, ProgressBar p2HPBar, Label p2HPLabel) {
+                                         Label p2NameLabel, ProgressBar p2HPBar, Label p2HPLabel,
+                                         BorderPane root) {
         Pokemon playerPokemon = app.teamPlayer1.isEmpty() ? null : app.teamPlayer1.get(0);
         Pokemon compPokemon = app.teamPlayer2.isEmpty() ? null : app.teamPlayer2.get(0);
         if (playerPokemon == null || compPokemon == null || moveButton == null) return;
@@ -171,16 +177,15 @@ public class CombatUI {
         if (moveIndex < 0) return;
         Attack playerMove = playerPokemon.getMoves().get(moveIndex);
 
-        // L'IA choisit son move aléatoirement
+        // L'IA choisit une attaque aléatoirement
         Attack compMove = null;
         if (!compPokemon.getMoves().isEmpty()) {
             Random r = new Random();
             compMove = compPokemon.getMoves().get(r.nextInt(compPokemon.getMoves().size()));
         }
 
-        // Comparaison des vitesses pour déterminer l'ordre d'attaque
         double playerSpeed = playerPokemon.getSpeedValueForPriorityCheck();
-        double compSpeed = CombatUI.getSpeedValueForPriorityCheck(compPokemon);
+        double compSpeed = getSpeedValueForPriorityCheck(compPokemon);
 
         if (playerSpeed > compSpeed) {
             if (doAttack(app, playerPokemon, compPokemon, playerMove, battleLog)) {
@@ -189,7 +194,7 @@ public class CombatUI {
                 if (compPokemon.getCurrentHP() <= 0) {
                     battleLog.appendText(compPokemon.getName() + " est KO !\n");
                     forceSwitchOrEnd(app, false, battleLog, p1NameLabel, p1HPBar, p1HPLabel,
-                            p2NameLabel, p2HPBar, p2HPLabel);
+                            p2NameLabel, p2HPBar, p2HPLabel, root);
                     return;
                 }
             }
@@ -200,7 +205,7 @@ public class CombatUI {
                     if (playerPokemon.getCurrentHP() <= 0) {
                         battleLog.appendText(playerPokemon.getName() + " est KO !\n");
                         forceSwitchOrEnd(app, true, battleLog, p1NameLabel, p1HPBar, p1HPLabel,
-                                p2NameLabel, p2HPBar, p2HPLabel);
+                                p2NameLabel, p2HPBar, p2HPLabel, root);
                         return;
                     }
                 }
@@ -213,7 +218,7 @@ public class CombatUI {
                     if (playerPokemon.getCurrentHP() <= 0) {
                         battleLog.appendText(playerPokemon.getName() + " est KO !\n");
                         forceSwitchOrEnd(app, true, battleLog, p1NameLabel, p1HPBar, p1HPLabel,
-                                p2NameLabel, p2HPBar, p2HPLabel);
+                                p2NameLabel, p2HPBar, p2HPLabel, root);
                         return;
                     }
                 }
@@ -224,12 +229,11 @@ public class CombatUI {
                 if (compPokemon.getCurrentHP() <= 0) {
                     battleLog.appendText(compPokemon.getName() + " est KO !\n");
                     forceSwitchOrEnd(app, false, battleLog, p1NameLabel, p1HPBar, p1HPLabel,
-                            p2NameLabel, p2HPBar, p2HPLabel);
+                            p2NameLabel, p2HPBar, p2HPLabel, root);
                     return;
                 }
             }
         } else {
-            // Égalité de vitesse, départ aléatoire
             if (Math.random() < 0.5) {
                 if (doAttack(app, playerPokemon, compPokemon, playerMove, battleLog)) {
                     updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel,
@@ -237,7 +241,7 @@ public class CombatUI {
                     if (compPokemon.getCurrentHP() <= 0) {
                         battleLog.appendText(compPokemon.getName() + " est KO !\n");
                         forceSwitchOrEnd(app, false, battleLog, p1NameLabel, p1HPBar, p1HPLabel,
-                                p2NameLabel, p2HPBar, p2HPLabel);
+                                p2NameLabel, p2HPBar, p2HPLabel, root);
                         return;
                     }
                 }
@@ -248,7 +252,7 @@ public class CombatUI {
                         if (playerPokemon.getCurrentHP() <= 0) {
                             battleLog.appendText(playerPokemon.getName() + " est KO !\n");
                             forceSwitchOrEnd(app, true, battleLog, p1NameLabel, p1HPBar, p1HPLabel,
-                                    p2NameLabel, p2HPBar, p2HPLabel);
+                                    p2NameLabel, p2HPBar, p2HPLabel, root);
                             return;
                         }
                     }
@@ -261,7 +265,7 @@ public class CombatUI {
                         if (playerPokemon.getCurrentHP() <= 0) {
                             battleLog.appendText(playerPokemon.getName() + " est KO !\n");
                             forceSwitchOrEnd(app, true, battleLog, p1NameLabel, p1HPBar, p1HPLabel,
-                                    p2NameLabel, p2HPBar, p2HPLabel);
+                                    p2NameLabel, p2HPBar, p2HPLabel, root);
                             return;
                         }
                     }
@@ -272,7 +276,7 @@ public class CombatUI {
                     if (compPokemon.getCurrentHP() <= 0) {
                         battleLog.appendText(compPokemon.getName() + " est KO !\n");
                         forceSwitchOrEnd(app, false, battleLog, p1NameLabel, p1HPBar, p1HPLabel,
-                                p2NameLabel, p2HPBar, p2HPLabel);
+                                p2NameLabel, p2HPBar, p2HPLabel, root);
                         return;
                     }
                 }
@@ -313,13 +317,16 @@ public class CombatUI {
         return true;
     }
 
+    // Force le switch ou termine le combat et affiche le message de victoire/défaite
     private static void forceSwitchOrEnd(PokemonBattleSimulator app, boolean isPlayer,
                                          TextArea battleLog,
                                          Label p1NameLabel, ProgressBar p1HPBar, Label p1HPLabel,
-                                         Label p2NameLabel, ProgressBar p2HPBar, Label p2HPLabel) {
+                                         Label p2NameLabel, ProgressBar p2HPBar, Label p2HPLabel,
+                                         BorderPane root) {
         if (isPlayer) {
             if (app.teamPlayer1.size() <= 1) {
-                battleLog.appendText("Vous n'avez plus de Pokémon disponibles. Défaite...\n");
+                battleLog.appendText("Tous vos Pokémon sont KO. Défaite...\n");
+                endBattle(battleLog, root, "Défaite");
                 return;
             } else {
                 java.util.List<Pokemon> alive = new java.util.ArrayList<>();
@@ -328,6 +335,7 @@ public class CombatUI {
                 }
                 if (alive.isEmpty()) {
                     battleLog.appendText("Tous vos Pokémon sont KO. Défaite...\n");
+                    endBattle(battleLog, root, "Défaite");
                     return;
                 }
                 Pokemon newActive = alive.get(0);
@@ -339,12 +347,11 @@ public class CombatUI {
                 newActive.resetStages();
                 updateActivePokemonInfo(app, p1NameLabel, p1HPBar, p1HPLabel,
                         p2NameLabel, p2HPBar, p2HPLabel);
-                updatePlayerTeamPane(app, battleLog, p1NameLabel, p1HPBar, p1HPLabel,
-                        p2NameLabel, p2HPBar, p2HPLabel);
             }
         } else {
             if (app.teamPlayer2.size() <= 1) {
                 battleLog.appendText("L'adversaire n'a plus de Pokémon. Victoire !\n");
+                endBattle(battleLog, root, "Victoire");
                 return;
             } else {
                 java.util.List<Pokemon> alive = new java.util.ArrayList<>();
@@ -353,6 +360,7 @@ public class CombatUI {
                 }
                 if (alive.isEmpty()) {
                     battleLog.appendText("L'adversaire n'a plus de Pokémon. Victoire !\n");
+                    endBattle(battleLog, root, "Victoire");
                     return;
                 }
                 Pokemon newActive = alive.get(0);
@@ -367,6 +375,20 @@ public class CombatUI {
         }
     }
 
+    // Affiche un écran final avec le message et un bouton "Quitter"
+    private static void endBattle(TextArea battleLog, BorderPane root, String result) {
+        battleLog.appendText("Fin du combat.\n");
+        root.getChildren().clear();
+        VBox endBox = new VBox(20);
+        endBox.setAlignment(Pos.CENTER);
+        Label resultLabel = new Label(result);
+        resultLabel.setFont(Font.font(36));
+        Button quitButton = new Button("Quitter");
+        quitButton.setOnAction(e -> System.exit(0));
+        endBox.getChildren().addAll(resultLabel, quitButton);
+        root.setCenter(endBox);
+    }
+
     public static void updateActivePokemonInfo(PokemonBattleSimulator app,
                                                Label p1NameLabel, ProgressBar p1HPBar, Label p1HPLabel,
                                                Label p2NameLabel, ProgressBar p2HPBar, Label p2HPLabel) {
@@ -374,7 +396,7 @@ public class CombatUI {
         Pokemon active2 = app.teamPlayer2.isEmpty() ? null : app.teamPlayer2.get(0);
 
         if (active1 != null) {
-            p1NameLabel.setText(active1.getName() + (active1.isMegaEvolved() ? " (Mega)" : ""));
+            p1NameLabel.setText(active1.toString());
             if (active1.getCurrentHP() <= 0) {
                 p1HPLabel.setText("KO !");
                 p1HPBar.setProgress(0);
@@ -391,7 +413,7 @@ public class CombatUI {
         }
 
         if (active2 != null) {
-            p2NameLabel.setText(active2.getName() + (active2.isMegaEvolved() ? " (Mega)" : ""));
+            p2NameLabel.setText(active2.toString());
             if (active2.getCurrentHP() <= 0) {
                 p2HPLabel.setText("KO !");
                 p2HPBar.setProgress(0);
@@ -448,7 +470,6 @@ public class CombatUI {
         }
     }
 
-    // Méthode utilitaire pour obtenir la vitesse effective d'un Pokémon pour la priorité
     public static double getSpeedValueForPriorityCheck(Pokemon p) {
         double speed = p.getSpeed();
         if (p.getStatus() == Status.PARALYSIS) {

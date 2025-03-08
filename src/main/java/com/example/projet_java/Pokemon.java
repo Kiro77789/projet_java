@@ -209,30 +209,42 @@ public class Pokemon {
 
     // Méga-Évolution : renomme + augmente 2 plus grosses stats de +30
     public void megaEvolve() {
-        if (!megaEvolved && heldItem == null) {
-            this.name = "Mega-" + this.name;
-            // On prend un tableau [valeur, index]
-            int[][] stats = new int[][] {
-                    { baseAttack, 0 },
-                    { baseDefense, 1 },
-                    { baseAttackSpe, 2 },
-                    { baseDefenseSpe, 3 },
-                    { baseSpeed, 4 }
-            };
-            java.util.Arrays.sort(stats, (a, b) -> b[0] - a[0]);
-            for (int i = 0; i < 2; i++) {
-                int idx = stats[i][1];
-                switch (idx) {
-                    case 0: baseAttack += 30; break;
-                    case 1: baseDefense += 30; break;
-                    case 2: baseAttackSpe += 30; break;
-                    case 3: baseDefenseSpe += 30; break;
-                    case 4: baseSpeed += 30; break;
-                }
-            }
-            this.megaEvolved = true;
+        // Seuls les Pokémon pouvant mega évoluer sont Mewtwo, Onix et Dracaufeu.
+        // On vérifie ici le nom de base. Si le Pokémon a déjà été mega évolué, son nom commence par "Mega-".
+        if (this.name.startsWith("Mega-")) {
+            return; // déjà mega évolué
         }
+        if (!(this.name.equals("Mewtwo") || this.name.equals("Onix") || this.name.equals("Dracaufeu"))) {
+            // Ce Pokémon ne peut pas mega évoluer
+            return;
+        }
+        if (heldItem != null) {
+            return; // Un Pokémon qui tient un objet ne peut pas mega évoluer.
+        }
+
+        // Effectue la méga évolution : renommer et augmenter de +30 les 2 statistiques les plus élevées.
+        this.name = "Mega-" + this.name;
+        int[][] stats = new int[][] {
+                { baseAttack, 0 },
+                { baseDefense, 1 },
+                { baseAttackSpe, 2 },
+                { baseDefenseSpe, 3 },
+                { baseSpeed, 4 }
+        };
+        java.util.Arrays.sort(stats, (a, b) -> b[0] - a[0]);
+        for (int i = 0; i < 2; i++) {
+            int idx = stats[i][1];
+            switch (idx) {
+                case 0: baseAttack += 30; break;
+                case 1: baseDefense += 30; break;
+                case 2: baseAttackSpe += 30; break;
+                case 3: baseDefenseSpe += 30; break;
+                case 4: baseSpeed += 30; break;
+            }
+        }
+        this.megaEvolved = true;
     }
+
 
     // Calcul des dégâts en tenant compte des talents, type chart, etc.
     public int calculateDamage(Pokemon opponent, Attack move) {

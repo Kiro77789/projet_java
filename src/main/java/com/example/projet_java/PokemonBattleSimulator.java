@@ -18,16 +18,16 @@ public class PokemonBattleSimulator extends Application {
     @Override
     public void init() throws Exception {
         // Initialisation des Pokémons disponibles (au moins 10)
-        availablePokemons.add(new Pokemon("Magicarpe", 250, 52, 20, 75, 66, 100, new String[]{"Eau"}, null));
+        availablePokemons.add(new Pokemon("Magicarpe", 250, 52, 20, 75, 66, 100, new String[]{"Eau"}, new BrasierTalent()));
         availablePokemons.add(new Pokemon("Salamèche", 200, 70, 40, 90, 50, 80, new String[]{"Feu"}, new BrasierTalent()));
-        availablePokemons.add(new Pokemon("Bulbizarre", 220, 65, 45, 70, 60, 70, new String[]{"Plante"}, null));
-        availablePokemons.add(new Pokemon("Carapuce", 230, 60, 50, 65, 55, 75, new String[]{"Eau"}, null));
-        availablePokemons.add(new Pokemon("Pikachu", 180, 75, 35, 80, 40, 110, new String[]{"électrique"}, null));
-        availablePokemons.add(new Pokemon("Roucool", 190, 65, 40, 75, 50, 90, new String[]{"Vol"}, null));
-        availablePokemons.add(new Pokemon("Onix", 300, 80, 100, 40, 50, 30, new String[]{"Sol"}, null));
-        availablePokemons.add(new Pokemon("Evoli", 200, 70, 50, 70, 50, 80, new String[]{"Normal"}, null));
+        availablePokemons.add(new Pokemon("Bulbizarre", 220, 65, 45, 70, 60, 70, new String[]{"Plante"}, new VaccinTalent()));
+        availablePokemons.add(new Pokemon("Carapuce", 230, 60, 50, 65, 55, 75, new String[]{"Eau"}, new VaccinTalent()));
+        availablePokemons.add(new Pokemon("Pikachu", 180, 75, 35, 80, 40, 110, new String[]{"électrique"}, new BrasierTalent()));
+        availablePokemons.add(new Pokemon("Roucool", 190, 65, 40, 75, 50, 90, new String[]{"Vol"}, new LevitationTalent()));
+        availablePokemons.add(new Pokemon("Onix", 300, 80, 100, 40, 50, 30, new String[]{"Sol"}, new VaccinTalent()));
+        availablePokemons.add(new Pokemon("Evoli", 200, 70, 50, 70, 50, 80, new String[]{"Normal"}, new LevitationTalent()));
         availablePokemons.add(new Pokemon("Dracaufeu", 240, 90, 60, 100, 70, 95, new String[]{"Feu"}, new BrasierTalent()));
-        availablePokemons.add(new Pokemon("Mewtwo", 280, 110, 70, 140, 90, 130, new String[]{"Psy"}, null));
+        availablePokemons.add(new Pokemon("Mewtwo", 280, 110, 70, 140, 90, 130, new String[]{"Psy"}, new LevitationTalent()));
     }
 
     @Override
