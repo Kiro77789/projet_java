@@ -239,10 +239,16 @@ public class CombatUI {
         Pokemon active2 = app.teamPlayer2.isEmpty() ? null : app.teamPlayer2.get(0);
 
         // Joueur 1
+        // Dans updateActivePokemonInfo(...)
         if (active1 != null) {
             p1NameLabel.setText(active1.getName() + (active1.isMegaEvolved() ? " (Mega)" : ""));
-            p1HPBar.setProgress(active1.getCurrentHP() / (double) active1.getMaxHP());
-            p1HPLabel.setText("HP: " + active1.getCurrentHP() + "/" + active1.getMaxHP());
+            if (active1.getCurrentHP() <= 0) {
+                p1HPLabel.setText("KO !");
+                p1HPBar.setProgress(0);
+            } else {
+                p1HPLabel.setText("HP: " + active1.getCurrentHP() + "/" + active1.getMaxHP());
+                p1HPBar.setProgress(active1.getCurrentHP() / (double) active1.getMaxHP());
+            }
             updateStatusColor(active1, p1StatusRect);
         } else {
             p1NameLabel.setText("Aucun");
@@ -251,11 +257,18 @@ public class CombatUI {
             p1StatusRect.setFill(Color.TRANSPARENT);
         }
 
+
         // Ordinateur
+        // Dans updateActivePokemonInfo(...)
         if (active2 != null) {
             p2NameLabel.setText(active2.getName() + (active2.isMegaEvolved() ? " (Mega)" : ""));
-            p2HPBar.setProgress(active2.getCurrentHP() / (double) active2.getMaxHP());
-            p2HPLabel.setText("HP: " + active2.getCurrentHP() + "/" + active2.getMaxHP());
+            if (active2.getCurrentHP() <= 0) {
+                p2HPLabel.setText("KO !");
+                p2HPBar.setProgress(0);
+            } else {
+                p2HPLabel.setText("HP: " + active2.getCurrentHP() + "/" + active2.getMaxHP());
+                p2HPBar.setProgress(active2.getCurrentHP() / (double) active2.getMaxHP());
+            }
             updateStatusColor(active2, p2StatusRect);
         } else {
             p2NameLabel.setText("Aucun");
@@ -263,6 +276,7 @@ public class CombatUI {
             p2HPLabel.setText("HP: 0");
             p2StatusRect.setFill(Color.TRANSPARENT);
         }
+
     }
 
     // Met à jour la couleur du petit carré en fonction du statut
@@ -310,4 +324,38 @@ public class CombatUI {
         if (index == 2) btn3.setText(txt);
         if (index == 3) btn4.setText(txt);
     }
+
+    private static void forceSwitchOrEnd(PokemonBattleSimulator app, boolean isPlayer, TextArea battleLog) {
+        // isPlayer = true => c'est le Pokémon du joueur qui est KO
+        // isPlayer = false => c'est le Pokémon de l'IA
+
+        if (isPlayer) {
+            // Si le joueur n'a plus d'autres Pokémon
+            if (app.teamPlayer1.size() <= 1) {
+                battleLog.appendText("Vous n'avez plus de Pokémon disponibles. Défaite...\n");
+                // On pourrait désactiver les boutons, etc.
+                return;
+            } else {
+                // Forcer le changement : on prend le premier Pokémon après l'actif
+                Pokemon oldActive = app.teamPlayer1.get(0);
+                Pokemon newActive = app.teamPlayer1.get(1);
+                app.teamPlayer1.set(0, newActive);
+                app.teamPlayer1.remove(oldActive); // On retire le KO de l'équipe
+                battleLog.appendText("Vous envoyez " + newActive.getName() + " !\n");
+            }
+        } else {
+            // IA
+            if (app.teamPlayer2.size() <= 1) {
+                battleLog.appendText("L'adversaire n'a plus de Pokémon. Victoire !\n");
+                return;
+            } else {
+                Pokemon oldActive = app.teamPlayer2.get(0);
+                Pokemon newActive = app.teamPlayer2.get(1);
+                app.teamPlayer2.set(0, newActive);
+                app.teamPlayer2.remove(oldActive);
+                battleLog.appendText("L'adversaire envoie " + newActive.getName() + " !\n");
+            }
+        }
+    }
+
 }

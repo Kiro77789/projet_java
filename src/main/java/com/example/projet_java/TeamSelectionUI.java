@@ -80,11 +80,15 @@ public class TeamSelectionUI {
     }
 
     public static void addPokemonToTeam(PokemonBattleSimulator app, Pokemon p) {
+        // Crée une copie pour éviter que 2 pokémons identiques partagent la même instance
+        Pokemon copy = Pokemon.copyOf(p);
+
         for (javafx.scene.Node node : teamGrid.getChildren()) {
             VBox slot = (VBox) node;
             if (slot.getUserData() == null) {
                 slot.getChildren().clear();
-                Label info = new Label(p.getName() + "\nHP: " + p.getCurrentHP());
+                Label info = new Label(copy.getName() + "\nHP: " + copy.getCurrentHP());
+
                 // Bouton pour supprimer le Pokémon de l'équipe
                 Button deleteButton = new Button("Supprimer");
                 deleteButton.setOnAction(e -> {
@@ -92,28 +96,33 @@ public class TeamSelectionUI {
                     slot.getChildren().add(new Label("Vide"));
                     slot.setUserData(null);
                     if (app.currentPlayer == 1) {
-                        app.teamPlayer1.remove(p);
+                        app.teamPlayer1.remove(copy);
                     } else {
-                        app.teamPlayer2.remove(p);
+                        app.teamPlayer2.remove(copy);
                     }
                 });
+
                 // Bouton pour modifier (attribuer) les attaques du Pokémon
                 Button modifyMovesButton = new Button("Modifier Moves");
                 modifyMovesButton.setOnAction(e -> {
-                    MoveModificationUI.showMoveModificationDialog(p);
-                    info.setText(p.getName() + "\nHP: " + p.getCurrentHP() + "\nMoves: " + p.getMoves());
+                    MoveModificationUI.showMoveModificationDialog(copy);
+                    info.setText(copy.getName() + "\nHP: " + copy.getCurrentHP() + "\nMoves: " + copy.getMoves());
                 });
+
                 slot.getChildren().addAll(info, modifyMovesButton, deleteButton);
-                slot.setUserData(p);
+                slot.setUserData(copy);
+
+                // Ajout dans la bonne équipe
                 if (app.currentPlayer == 1) {
-                    app.teamPlayer1.add(p);
+                    app.teamPlayer1.add(copy);
                 } else {
-                    app.teamPlayer2.add(p);
+                    app.teamPlayer2.add(copy);
                 }
                 break;
             }
         }
     }
+
 
     private static void clearTeamGrid() {
         for (javafx.scene.Node node : teamGrid.getChildren()) {
